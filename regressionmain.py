@@ -10,8 +10,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-#TODO: normalize the input variables (e.g. 0-1), and apply weights to them !
-
+#TODO: add a function to return a function as in the problem set
+#TODO: write the code to utilize a value of lambda
 
 
 
@@ -23,11 +23,22 @@ from matplotlib import pyplot as plt
 
 #Takes in a dataset, and returns a Nx(M+1) array of the data, with rows
 # of the form (t,x,x,x...)
+# also returns the scale, to keep track of mater on.
 def getdataset(file):
-    data = pd.read_csv(file).to_numpy()
-    N = len(data)
+    rawdata = pd.read_csv(file).to_numpy()
+    N = len(rawdata)
     ones = np.repeat(1,N)
-    return np.column_stack((ones, data))
+    return np.column_stack((ones, rawdata))
+
+#NOTE: this function actually modifies the data, and it only returns the scales used
+# As written, this function doesn't handle an all-zero data-set, if you wanted it to
+def scaledata(data):
+    mins = data.min(axis=0)
+    maxes = data.max(axis=0)
+    scale = np.maximum(maxes, -mins)
+    data /= scale
+    return scale
+    
 
 #(e)
 #takes in a dataset (as returned by getdataset), and converts it into a data-set
@@ -50,6 +61,7 @@ def getX(data):
 #This function takes in a data set (as returned by getdataset) and returns the 
 # OLS parameters (w_0,w_1) such that t_n ~ w_0 + w_1*x_n
 # regparam is the regularization parameter (lambda) if you are using it
+#TODO: implement regparam here
 def getOLS(data, regparam=0):
     X = getX(data) #the big X matrix
     t = data[:,-1] #the target data
@@ -57,7 +69,6 @@ def getOLS(data, regparam=0):
     
     operation = np.dot( np.linalg.inv(np.dot(X.T, X)), X.T)
     return np.dot(operation, t)
-
 
 
 #Takes in a data-set (as given by getdataset) and returns the prediction according
@@ -78,10 +89,17 @@ def applypoly(poly, x):
 
 #Takes in a data-set (as given by getdataset) and a pair (w_0, w_1), and plots everything
 #Note that this only really works if M = 1.
-def plotoutput(data, classifier, title):
+#Can accomodate a scale, the default is no scale
+def plotoutput(data, classifier, title, *, scale=None):
     X_values = data[:,1]
     Y_true = data[:,-1] #actual data points
     Y_pred = getpred(classifier, data) #predicted output
+    
+    if scale is not None:
+        X_values *= scale[1]
+        Y_true *= scale[-1]
+        Y_pred *= scale[-1]
+    
     plt.title(title)
     plt.scatter(X_values, Y_true, c='b', label='true data')
     plt.plot(X_values, Y_pred, c='g', label='line of best fit')
@@ -89,38 +107,46 @@ def plotoutput(data, classifier, title):
     plt.show()
 
 #Like plotoutput, but accomodates polynomial functions!
-def plotoutputpoly(data, classifier, title):
+def plotoutputpoly(data, classifier, title, *, scale = None):
     X_values = data[:,1]
     Y_true = data[:,-1] #actual data points
+    X_fine = np.linspace(min(X_values), max(X_values), num=200) # for plotting the polynomial
+    Y_pred = applypoly(classifier, X_fine) #predicted output
     
-    X_fine = np.linspace(min(X_values), max(X_values), num=20) # for plotting the polynomial
-    Y_prediction = applypoly(classifier, X_fine) #predicted output
+    if scale is not None:
+        X_values *= scale[1]
+        X_fine *= scale[1]
+        Y_true *= scale[-1]
+        Y_pred *= scale[-1]
     
     plt.title(title)
     plt.scatter(X_values, Y_true, c='y', label='true data')
-    plt.plot(X_fine,Y_prediction, c='r', label='polynomial of best fit')
+    plt.plot(X_fine,Y_pred, c='r', label='polynomial of best fit')
     plt.legend()
+    #plt.ylim(-800, 1500)
     plt.show()
 
 
-#(d.)
-#returns the list of squared errors
-def geterrors(data, classifier):
+#This isn't actually required, but I wrote it, so it's staying.
+#returns the total squared error from solver
+def getOLSerror(data, classifier, scale=None):
     true = data[:,-1]
     pred = getpred(classifier, data)
+    if scale is not None:
+        true *= scale[-1]
+        pred *= scale[-1]
     ret = (pred-true)*(pred-true)
-    return ret
-def getOLSerror(data, classifier):
-    return np.sum(geterrors(data, classifier))
+    return np.sum(ret)
 
 #(f)
 #def getOLSpoly(ordinarydata, D, axis=1):
 #    return getOLS(convertpoly(ordinarydata, D, axis))
 
 mydata = getdataset("synthdata2016.csv")
-mypolydata = convertpoly(mydata, 3)
+mypolydata = convertpoly(mydata, 60)
+mypolyscale = scaledata(mypolydata)
 myclassifier = getOLS(mypolydata)
-plotoutputpoly(mypolydata, myclassifier, "graph of a quadratic fit to womens 100m times")
+plotoutputpoly(mypolydata, myclassifier, "graph of a quadratic fit to womens 100m times", scale = mypolyscale)
 
 
 #myclassifier = getOLS(mydata)
