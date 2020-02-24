@@ -10,8 +10,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-#TODO: add a function to return a function as in the problem set
-#TODO: write the code to utilize a value of lambda
+#TODO: clean up
 
 
 
@@ -65,9 +64,9 @@ def getX(data):
 def getOLS(data, regparam=0):
     X = getX(data) #the big X matrix
     t = data[:,-1] #the target data
-    N = len(t)
+    M = len(X[0])
     
-    operation = np.dot( np.linalg.inv(np.dot(X.T, X)), X.T)
+    operation = np.dot( np.linalg.inv(np.dot(X.T, X) + regparam*np.identity(M)), X.T)
     return np.dot(operation, t)
 
 
@@ -123,7 +122,6 @@ def plotoutputpoly(data, classifier, title, *, scale = None):
     plt.scatter(X_values, Y_true, c='y', label='true data')
     plt.plot(X_fine,Y_pred, c='r', label='polynomial of best fit')
     plt.legend()
-    #plt.ylim(-800, 1500)
     plt.show()
 
 
@@ -142,10 +140,26 @@ def getOLSerror(data, classifier, scale=None):
 #def getOLSpoly(ordinarydata, D, axis=1):
 #    return getOLS(convertpoly(ordinarydata, D, axis))
 
+
+#(i)
+# "Create a version of your solver that, instead of returning the coefficients,
+#  returns a function which, when called on a new predictor matrix returns a
+#  vector of predictions"
+# I'm not sure if this is what it's supposed to do, so if anyone wants to change
+# this function to fit part 2 better, be my guest.
+def predictorfunc(knowndata):
+    classifier = getOLS(knowndata)
+    #NOTE: testdata should still have t-values b/c of how the function is written
+    #, but the functions here will strip off the t-value and not use it
+    def returnfunc(testdata):
+        return getpred(classifier, testdata)
+    return returnfunc
+    
+
 mydata = getdataset("synthdata2016.csv")
-mypolydata = convertpoly(mydata, 60)
+mypolydata = convertpoly(mydata, 4)
 mypolyscale = scaledata(mypolydata)
-myclassifier = getOLS(mypolydata)
+myclassifier = getOLS(mypolydata, regparam=0)
 plotoutputpoly(mypolydata, myclassifier, "graph of a quadratic fit to womens 100m times", scale = mypolyscale)
 
 
