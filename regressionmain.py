@@ -49,7 +49,7 @@ def convertpoly(data, D, axis=1):
     t = data[:,-1]
     #TODO: make this line prettier
     pdata = np.array([col**i for i in range(1,D+1)]).T
-    return np.column_stack((ones, pdata,t))
+    return np.column_stack((ones, pdata, t))
 
 
 #gets the big X matrix
@@ -137,8 +137,8 @@ def getOLSerror(data, classifier, scale=None):
     return np.sum(ret)
 
 #(f)
-#def getOLSpoly(ordinarydata, D, axis=1):
-#    return getOLS(convertpoly(ordinarydata, D, axis))
+def getOLSpoly(ordinarydata, D, axis=1):
+    return getOLS(convertpoly(ordinarydata, D, axis))
 
 
 #(i)
@@ -156,12 +156,15 @@ def predictorfunc(knowndata):
     return returnfunc
     
 
-mydata = getdataset("synthdata2016.csv")
-mypolydata = convertpoly(mydata, 4)
-mypolyscale = scaledata(mypolydata)
-myclassifier = getOLS(mypolydata, regparam=0)
-plotoutputpoly(mypolydata, myclassifier, "graph of a quadratic fit to womens 100m times", scale = mypolyscale)
+def main():
+    mydata = getdataset("synthdata2016.csv")
+    mypolydata = convertpoly(mydata, 4)
+    mypolyscale = scaledata(mypolydata)
+    myclassifier = getOLS(mypolydata, regparam=0)
+    plotoutputpoly(mypolydata, myclassifier, "graph of a quadratic fit to womens 100m times", scale = mypolyscale)
 
+if __name__ == "__main__":
+    main()
 
 #myclassifier = getOLS(mydata)
 #plotoutput(mydata, myclassifier, "Graph of OLS error for womens top 100 racetimes")
