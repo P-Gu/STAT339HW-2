@@ -13,7 +13,7 @@ import math
 
 
 # (a)
-def mse(target, prediction):
+def Mse(target, prediction):
     return (np.square(target - prediction)).mean(axis=None)
 
 
@@ -55,17 +55,21 @@ def best_order(ordinarydata, K, seed, ret_err=False, D=None):
     np.random.seed(seed)
     shuffled_set = np.copy(ordinarydata)
     np.random.shuffle(shuffled_set)
-    KD_matrix = np.empty((K, D))
-    KD_matrix_train = np.empty((K, D))
+    KD_matrix = np.empty((K, D+1))
+    KD_matrix_train = np.empty((K, D+1))
     for i in range(K):
         start = math.floor(i * total / K)
         end = math.floor((i + 1) * total / K)
         val_set = shuffled_set[start:end]
         train_set = np.concatenate((shuffled_set[:start], shuffled_set[end:]))
-        for j in range(D+1):
-            W = reg.getOLSpoly(train_set, D)
-            pred = np.dot(val_set[:, :-1], np.transpose(W))
-            mse = reg.mse(pred, val_set[:, -1])
+        for j in range(1,D+1):
+            W = reg.getOLSpoly(train_set, j)
+            W = np.expand_dims(W, axis=1)
+            converted = reg.convertpoly(val_set[:,:-1], j)
+            print(converted)
+            print(j)
+            pred = np.dot(converted[:,:-1], W)
+            mse = Mse(pred, val_set[:, -1])
             KD_matrix[i,j]=mse
             if ret_err is True:
                 pred_train = np.dot(train_set[:, :-1], np.transpose(W))
@@ -82,6 +86,7 @@ def best_order(ordinarydata, K, seed, ret_err=False, D=None):
 
 def main():
     data = reg.getdataset("womens100.csv")
+    print(reg.getOLSpoly(data, 1))
     means, best_index = best_order(data, 10, 1)
 
 
